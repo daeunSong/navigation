@@ -147,7 +147,7 @@ namespace dwa_local_planner {
     //when we get a new plan, we also want to clear any latch we may have on goal tolerances
     latchedStopRotateController_.resetLatching();
 
-    ROS_INFO("Got new plan");
+    // ROS_INFO("Got new plan");
     return dp_->setPlan(orig_global_plan);
   }
 
@@ -207,7 +207,7 @@ namespace dwa_local_planner {
     
     // call with updated footprint
     base_local_planner::Trajectory path = dp_->findBestPath(global_pose, robot_vel, drive_cmds);
-    //ROS_ERROR("Best: %.2f, %.2f, %.2f, %.2f", path.xv_, path.yv_, path.thetav_, path.cost_);
+    ROS_ERROR("Best: %.2f, %.2f, %.2f, %.2f", path.xv_, path.yv_, path.thetav_, path.cost_);
 
     /* For timing uncomment
     gettimeofday(&end, NULL);

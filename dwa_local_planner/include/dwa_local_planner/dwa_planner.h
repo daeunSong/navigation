@@ -58,9 +58,11 @@
 #include <base_local_planner/map_grid_cost_function.h>
 #include <base_local_planner/obstacle_cost_function.h>
 #include <base_local_planner/twirling_cost_function.h>
+#include <base_local_planner/social_cost_function.h>
 #include <base_local_planner/simple_scored_sampling_planner.h>
 
 #include <nav_msgs/Path.h>
+#include <vlm_social_nav/SocialNavMsg.h>
 
 namespace dwa_local_planner {
   /**
@@ -143,6 +145,14 @@ namespace dwa_local_planner {
        * sets new plan and resets state
        */
       bool setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan);
+      
+      /**
+       * Related to Social Navigation
+       */
+      ros::Subscriber social_sub_;
+      int head_dir;
+      int speed;
+      void socialCallback(const vlm_social_nav::SocialNavMsg::ConstPtr& msg);
 
     private:
 
@@ -178,6 +188,7 @@ namespace dwa_local_planner {
       base_local_planner::MapGridCostFunction goal_front_costs_;
       base_local_planner::MapGridCostFunction alignment_costs_;
       base_local_planner::TwirlingCostFunction twirling_costs_;
+      base_local_planner::SocialCostFunction social_costs_;
 
       base_local_planner::SimpleScoredSamplingPlanner scored_sampling_planner_;
   };

@@ -84,6 +84,7 @@ namespace dwa_local_planner {
     obstacle_costs_.setParams(config.max_vel_trans, config.max_scaling_factor, config.scaling_speed);
 
     twirling_costs_.setScale(config.twirling_scale);
+    social_costs_.setScale(config.social_scale);
 
     int vx_samp, vy_samp, vth_samp;
     vx_samp = config.vx_samples;
@@ -163,6 +164,7 @@ namespace dwa_local_planner {
     private_nh.param("global_frame_id", frame_id_, std::string("odom"));
 
     traj_cloud_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("trajectory_cloud", 1);
+    social_sub_ = private_nh.subscribe("/openai_result", 1, &DWAPlanner::socialCallback, this);
     private_nh.param("publish_traj_pc", publish_traj_pc_, false);
 
     // set up all the cost functions that will be applied in order
@@ -175,6 +177,7 @@ namespace dwa_local_planner {
     critics.push_back(&path_costs_); // prefers trajectories on global path
     critics.push_back(&goal_costs_); // prefers trajectories that go towards (local) goal, based on wave propagation
     critics.push_back(&twirling_costs_); // optionally prefer trajectories that don't spin
+    critics.push_back(&social_costs_); // social cost
 
     // trajectory generators
     std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
@@ -202,6 +205,15 @@ namespace dwa_local_planner {
         goal_distance_bias_ * goal_cost +
         occdist_scale_ * occ_cost;
     return true;
+  }
+
+  void DWAPlanner::socialCallback(const vlm_social_nav::SocialNavMsg::ConstPtr& msg)
+  {
+    ROS_INFO("I heard: [%s, %s]", msg->head_dir.c_str(), msg->speed.c_str());
+    head_dir = std::stoi(msg->head_dir.c_str());
+    speed = std::stoi(msg->speed.c_str());
+    // costs for social
+    social_costs_.setParams(head_dir, speed);
   }
 
   bool DWAPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan) {
@@ -240,6 +252,7 @@ namespace dwa_local_planner {
   }
 
 
+  // HERE @@@@@
   void DWAPlanner::updatePlanAndLocalCosts(
       const geometry_msgs::PoseStamped& global_pose,
       const std::vector<geometry_msgs::PoseStamped>& new_plan,
