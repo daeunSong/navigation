@@ -22,45 +22,48 @@ void SocialCostFunction::resetParams() {
 }
 
 double SocialCostFunction::scoreTrajectory(Trajectory &traj) {
-    double lateral_deviation = 0;
-    double speed_deviation = 0;
-    double preferred_angle = 0;
-    double preferred_speed = 0.3;
+    const double TURN_COST_WEIGHT = 10.0;
+    const double SPEED_COST_WEIGHT = 5.0;
+    double cost = 0.0;
 
     //  no social cost recieved
     if (head_dir_ < 0 || speed_ < 0)
         return 0;
 
-    ////////////////////////////////// lateral
-    // preference on the left
-    if (head_dir_ == 1) 
-        preferred_angle = 0.25;
-    // preference on the straight
-    else if (head_dir_ == 0) 
-        preferred_angle = 0;
-    // preference on the right
-    else if (head_dir_ == 2) 
-        preferred_angle = -0.25;
+    for (unsigned int i = 0; i < traj.getPointsSize(); ++i) {
+        // Get the trajectory point (x, y, th)
+        double px, py, pth, desired_theta, desired_speed;
+        //////////////////////////////// lateral
+        // preference on the left
+        if (head_dir_ == 1) 
+            desired_theta = 0.2;
+        // preference on the straight
+        else if (head_dir_ == 0) 
+            desired_theta = 0;
+        // preference on the right
+        else if (head_dir_ == 2) 
+            desired_theta = -0.2;
 
-    lateral_deviation = fabs(preferred_angle - traj.thetav_);
+        cost += TURN_COST_WEIGHT * fabs(desired_theta - traj.thetav_);
 
-    ////////////////////////////////// speed
-    // slow down
-    if (speed_ == 0) 
-        preferred_speed = 0.2;
-    // speed up
-    else if (speed_ == 1) 
-        preferred_speed = 0.4;
-    // maintain
-    else if (speed_ == 2)
-        preferred_speed = 0.3;// do nothing
-    // stop
-    else if (speed_ == 3) 
-        return fabs(traj.xv_)*100;
+        ////////////////////////////////// speed
+        // slow down
+        if (speed_ == 0) 
+            desired_speed = 0.3;
+        // speed up
+        else if (speed_ == 1) 
+            desired_speed = 0.6;
+        // maintain
+        else if (speed_ == 2)
+            desired_speed = 0.4;// do nothing
+        // stop
+        else if (speed_ == 3) 
+            return fabs(traj.xv_)*100;
 
-    speed_deviation = fabs(preferred_speed - traj.xv_);
+        cost += SPEED_COST_WEIGHT * fabs(desired_speed - traj.xv_);
+    }
 
-    return lateral_deviation*50 + speed_deviation*5;
+    return cost;
 }
 
 } /* namespace base_local_planner */
